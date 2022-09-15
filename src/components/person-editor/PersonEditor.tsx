@@ -1,31 +1,13 @@
-import React, { ReactElement, useState, useEffect } from "react";
-import localforage from "localforage";
+import { ReactElement } from "react";
 import { LabeledInput } from "../LabeledInput";
-import { Loading } from '../Loading';
+import { Loading } from "../Loading";
 import { initialPerson } from "../../utils/initialPerson";
-import type { Person } from "../../types/person";
+import { usePerson } from "./usePerson";
 
-function saveperson(person:Person | null):void{
-    console.log("Saving person : " , person);
-    localforage.setItem("person", person);
-}
 export function PersonEditor(): ReactElement {
-  const [person, setPerson] = useState<Person | null>(null);
-
-  useEffect(() => {
-    const getPerson = async ()=> {
-        const person = await localforage.getItem<Person>("person")
-        setPerson(person ?? initialPerson);
-    }
-    getPerson();
-  },[]);
-
-  useEffect(() => {
-    saveperson(person);
-  },  [person]);
-
-  if(!person){
-    return <Loading />
+  const [person, setPerson] = usePerson(initialPerson);
+  if (!person) {
+    return <Loading />;
   }
   return (
     <form
@@ -42,7 +24,7 @@ export function PersonEditor(): ReactElement {
           setPerson((person) => ({
             ...person,
             firstName: e.target.value,
-          })); 
+          }));
         }}
       />
       <LabeledInput
