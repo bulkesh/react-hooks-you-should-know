@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import localforage from "localforage";
 import type { Person } from "../types/person";
 import { SleepTime } from '../utils/sleepTime';
 import { useIsMounted } from './useIsMounterd';
+import { useDebounce } from './useDebounce';
 
 function saveperson(person: Person | null): void {
   console.log("Saving person : ", person);
@@ -28,7 +29,6 @@ export function usePerson(initialPerson: Person) {
       const person = await localforage.getItem<Person>("person");
       // Wait for 2.5 seconds before loading data in personEditor
       await SleepTime(1000);
-      console.log("isMounted 2: ",isMounted);
       if(isMounted.current){
         setPerson(person ?? initialPerson);
       }
@@ -36,9 +36,11 @@ export function usePerson(initialPerson: Person) {
     getPerson();
   }, [initialPerson, isMounted]);
 
-  useEffect(() => {
+  // Save the person only after when you stop typing 
+  const saveFun = useCallback(() => {
     saveperson(person);
-  }, [person]);
+  }, [person])
+  useDebounce(saveFun, 1000);
 
   return [person, setPerson] as const;
 }
