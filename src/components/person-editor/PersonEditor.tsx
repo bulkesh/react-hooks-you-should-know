@@ -1,11 +1,18 @@
-import { ReactElement } from "react";
+import { ReactElement, useRef, useEffect} from "react";
 import { LabeledInput } from "../LabeledInput";
 import { Loading } from "../Loading";
 import { initialPerson } from "../../utils/initialPerson";
-import { usePerson } from "./usePerson";
+import { usePerson } from "../../hooks/usePerson";
 
 export function PersonEditor(): ReactElement {
   const [person, setPerson] = usePerson(initialPerson);
+  const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTimeout(() =>{
+      input.current?.focus();
+    }, 1000);
+  },[]);
   if (!person) {
     return <Loading />;
   }
@@ -17,7 +24,9 @@ export function PersonEditor(): ReactElement {
         alert(`Submitting\n${JSON.stringify(person, null, 2)}`);
       }}
     >
+      <h2>Person Editor</h2>
       <LabeledInput
+        ref={input}
         label="First Name : "
         value={person.firstName}
         onChange={(e) => {
