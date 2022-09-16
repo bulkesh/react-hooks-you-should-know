@@ -4,6 +4,8 @@ import type { Person } from "../types/person";
 import { SleepTime } from '../utils/sleepTime';
 import { useIsMounted } from './useIsMounterd';
 import { useDebounce } from './useDebounce';
+import { useWillUnmount } from './useWillUnmount';
+import { useThrottle } from "./useThrottle";
 
 function saveperson(person: Person | null): void {
   console.log("Saving person : ", person);
@@ -27,8 +29,8 @@ export function usePerson(initialPerson: Person) {
   useEffect(() => {
     const getPerson = async () => {
       const person = await localforage.getItem<Person>("person");
-      // Wait for 2.5 seconds before loading data in personEditor
-      await SleepTime(1000);
+      // Wait for 100 miliseconds before loading data in personEditor
+      await SleepTime(100);
       if(isMounted.current){
         setPerson(person ?? initialPerson);
       }
@@ -40,7 +42,18 @@ export function usePerson(initialPerson: Person) {
   const saveFun = useCallback(() => {
     saveperson(person);
   }, [person])
-  useDebounce(saveFun, 1000);
+  
+  // Save 1 seccond after stop typing in input field
+  //useDebounce(saveFun, 1000);
+  
+  // save after every 1 second in interval after start typing
+  useThrottle(saveFun, 1000);
+
+  // Due to debounce delay of 10 seconds, When component unmount
+  // Changes will not save. So we need to call saveFun function 
+  // before unmount of component in useWillUnmount custom hook.
+  useWillUnmount(saveFun); 
+  
 
   return [person, setPerson] as const;
 }
