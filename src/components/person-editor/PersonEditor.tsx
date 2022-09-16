@@ -13,6 +13,7 @@ export function PersonEditor(): ReactElement {
       input.current?.focus();
     }, 1000);
   },[]);
+  
   if (!person) {
     return <Loading />;
   }
