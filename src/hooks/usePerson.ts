@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import localforage from "localforage";
-import type { Person } from "../../types/person";
+import type { Person } from "../types/person";
+import { SleepTime } from '../utils/sleepTime';
+import { useIsMounted } from './useIsMounterd';
 
 function saveperson(person: Person | null): void {
   console.log("Saving person : ", person);
@@ -20,14 +22,19 @@ custom hook can also be exported as anonymous function
 
 export function usePerson(initialPerson: Person) {
   const [person, setPerson] = useState<Person | null>(null);
-
+  const isMounted = useIsMounted();
   useEffect(() => {
     const getPerson = async () => {
       const person = await localforage.getItem<Person>("person");
-      setPerson(person ?? initialPerson);
+      // Wait for 2.5 seconds before loading data in personEditor
+      await SleepTime(1000);
+      console.log("isMounted 2: ",isMounted);
+      if(isMounted.current){
+        setPerson(person ?? initialPerson);
+      }
     };
     getPerson();
-  }, [initialPerson]);
+  }, [initialPerson, isMounted]);
 
   useEffect(() => {
     saveperson(person);
