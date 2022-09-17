@@ -1,15 +1,20 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, SetStateAction } from "react";
 import localforage from "localforage";
 import type { Person } from "../types/person";
 import { SleepTime } from '../utils/sleepTime';
 import { useIsMounted } from './useIsMounterd';
 import { useDebounce } from './useDebounce';
 import { useWillUnmount } from './useWillUnmount';
-import { useThrottle } from "./useThrottle";
+import { useThrottle } from './useThrottle';
 
 function saveperson(person: Person | null): void {
   console.log("Saving person : ", person);
   localforage.setItem("person", person);
+}
+
+interface MetaData {
+  isDirty: boolean
+  isValid: boolean
 }
 
 /*
@@ -25,6 +30,8 @@ custom hook can also be exported as anonymous function
 
 export function usePerson(initialPerson: Person) {
   const [person, setPerson] = useState<Person | null>(null);
+  const [metadata, setMetaData] = useState<MetaData>({isDirty: false, isValid: true});
+
   const isMounted = useIsMounted();
   useEffect(() => {
     const getPerson = async () => {
@@ -53,7 +60,14 @@ export function usePerson(initialPerson: Person) {
   // Changes will not save. So we need to call saveFun function 
   // before unmount of component in useWillUnmount custom hook.
   useWillUnmount(saveFun); 
-  
 
-  return [person, setPerson] as const;
+
+  function setPersonAndMeta(value: SetStateAction<Person | null>) {
+    console.log("SetStateAction : ",value);
+    setPerson(value);
+    setMetaData((m) => ({...m, isDirty: true}));
+    //TODO: Validation
+  }
+
+  return [person, setPersonAndMeta, metadata] as const;
 }
