@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, SetStateAction } from "react";
+import { useState, useEffect, useCallback, SetStateAction, useReducer } from "react";
 import localforage from "localforage";
 import type { Person } from "../types/person";
 import { SleepTime } from '../utils/sleepTime';
@@ -6,6 +6,7 @@ import { useIsMounted } from './useIsMounterd';
 import { useDebounce } from './useDebounce';
 import { useWillUnmount } from './useWillUnmount';
 import { useThrottle } from './useThrottle';
+import { personEditorReducer } from './personEditorReducer';
 
 function saveperson(person: Person | null): void {
   console.log("Saving person : ", person);
@@ -18,7 +19,7 @@ interface MetaData {
 }
 
 /*
-custom hook can also be exported as anonymous function
+//custom hook can also be exported as anonymous function
  export default function (initialPerson:Person)
  and can be imported in any component and assigned to any name
  i.e => import  useMyPerson from "./usePerson";
@@ -29,8 +30,15 @@ custom hook can also be exported as anonymous function
  */
 
 export function usePerson(initialPerson: Person) {
-  const [person, setPerson] = useState<Person | null>(null);
-  const [metadata, setMetaData] = useState<MetaData>({isDirty: false, isValid: true});
+  // const [person, setPerson] = useState<Person | null>(null);
+  // const [metadata, setMetaData] = useState<MetaData>({isDirty: false, isValid: true});
+  
+  // We will now set and manage state with reducer 
+
+  const [{person, metadata}, dispatch] = useReducer(personEditorReducer,{
+    person:null,
+    metadata: {isDirty: false, isValid: true}
+  })
 
   const isMounted = useIsMounted();
   useEffect(() => {
@@ -39,7 +47,12 @@ export function usePerson(initialPerson: Person) {
       // Wait for 100 miliseconds before loading data in personEditor
       await SleepTime(100);
       if(isMounted.current){
-        setPerson(person ?? initialPerson);
+        //setPerson(person ?? initialPerson);
+
+        dispatch({
+          type: 'set-initial-person',
+          payload: person ?? initialPerson
+        })
       }
     };
     getPerson();
@@ -62,12 +75,21 @@ export function usePerson(initialPerson: Person) {
   useWillUnmount(saveFun); 
 
 
-  function setPersonAndMeta(value: SetStateAction<Person | null>) {
+  /*function setPersonAndMeta(value: SetStateAction<Person | null>) {
     console.log("SetStateAction : ",value);
     setPerson(value);
     setMetaData((m) => ({...m, isDirty: true}));
     //TODO: Validation
+  }*/
+
+  // Dispatch new event to reducer function to update values on form edit
+  function setproperty(name: keyof Person, value:unknown) {
+    dispatch({type:'set-property', payload:{name,value}});
+  }
+  
+  function setproperties(payload:Partial<Person>) {
+    dispatch({type:'set-properties', payload});
   }
 
-  return [person, setPersonAndMeta, metadata] as const;
+  return [person, setproperty, setproperties, metadata] as const;
 }
